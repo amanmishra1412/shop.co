@@ -20,12 +20,12 @@ app.use(cookieParser())
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use("/api/product",productRoute);
 
 app.get("/", (req, res) => {
     res.send("Backend working");
 });
 
 app.use("/auth", authRoute);
+app.use("/api/product",productRoute);
 
 module.exports = app;
