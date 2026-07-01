@@ -28,7 +28,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoute);
-app.use("/api/product", productRoute);
+app.use("/products",productRoute);
 app.use("/cart", cartRoute);
 
 module.exports = app;
