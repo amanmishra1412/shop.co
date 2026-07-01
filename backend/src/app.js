@@ -6,6 +6,8 @@ const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+const authRoute = require('./routes/authRoute')
+
 
 app.use(
     cors({
@@ -23,5 +25,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.send("Backend working");
 });
+
+app.use("/auth", authRoute);
 
 module.exports = app;
