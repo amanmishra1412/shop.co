@@ -20,7 +20,7 @@ function ResetForm() {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (form.password !== form.confirm) {
@@ -33,12 +33,15 @@ function ResetForm() {
     }
     setLoading(true);
     try {
-      // If email is in URL use it, otherwise use demo email
-      resetPassword(email || "demo@shopco.com", form.password);
-      setSuccess(true);
-      setTimeout(() => router.push("/auth/login"), 2500);
+      const result = await resetPassword(email, form.password);
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => router.push("/auth/login"), 2500);
+      } else {
+        setError(result.error || "Error occurred while resetting password.");
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }

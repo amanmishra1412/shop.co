@@ -1,126 +1,84 @@
+import api, { getData } from './api';
 
-const JSON_HEADERS = {
-  'Content-Type': 'application/json'
-};
+// ─────────────────────────────────────────────
+// Auth APIs
+// ─────────────────────────────────────────────
 
-const safeJson = async (response) => {
-  try {
-    return await response.json();
-  } catch {
-    return {};
-  }
-};
-
-const unwrapPayload = (payload) => {
-  if (payload && typeof payload === 'object' && payload.data && typeof payload.data === 'object') {
-    return payload.data;
-  }
-
-  return payload;
-};
-
-
-const requestAuthJson = async (path, options = {}) => {
-  const response = await fetch(path, {
-    cache: 'no-store',
-    credentials: 'include',
-    ...options,
-    headers: {
-      ...JSON_HEADERS,
-      ...(options.headers || {}),
-    },
-  });
-
-  const rawPayload = await safeJson(response);
-  const payload = unwrapPayload(rawPayload);
-
-  return {
-    response,
-    rawPayload,
-    payload,
-  };
-};
-
-
-
+/**
+ * Verify if the current user's token is valid.
+ */
 export const getToken = async () => {
-try {
-    const response = await fetch('/auth/verify-me', {
-      method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
+  try {
+    const response = await api.post('/auth/verify-me');
+    const payload = getData(response);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error while verify token.",
-        };
-      }
-
-      return {
-        success: true,
-      };
-    } catch {
-      return {
-        success: false,
-        error: "Error while verify token.",
-      };
+    if (!payload?.success) {
+      return { success: false, error: 'Error while verifying token.' };
     }
 
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Error while verifying token.' };
+  }
 };
 
+/**
+ * Get current logged-in user details.
+ */
+export const getCurrentUser = async () => {
+  try {
+    const response = await api.post('/auth/verify-me');
+    const payload = getData(response);
 
+    if (!payload?.success) {
+      return { success: false, error: 'Error while verifying token.' };
+    }
 
-// export const getCurrentUser = () => {
-//   const token = getToken();
-//   if (!token) return null;
-//   return decodeToken(token);
-// };
+    return { success: true, user: payload?.user || null };
+  } catch {
+    return { success: false, error: 'Error while verifying token.' };
+  }
+};
 
-
-
+/**
+ * Login a user with email and password.
+ * @param {string} email
+ * @param {string} password
+ */
 export const loginUser = async (email, password) => {
   try {
-    const submitLogin = async (token) => requestAuthJson('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(loginData),
-    });
+    const response = await api.post('/auth/login', { email, password });
+    const payload = getData(response);
 
-    let loginResponse = await submitLogin(csrfToken);
-
-    const { response, payload } = loginResponse;
-
-    if (response.ok && payload?.user) {
-      return {
-        success: true,
-        user: payload.user,
-      };
+    if (payload?.user) {
+      return { success: true, user: payload.user };
     }
 
     return {
       success: false,
-      error: 'Unable to sign in. Please check your credentials and try again.',
+      error: payload?.message || 'Unable to sign in. Please check your credentials and try again.',
     };
   } catch (error) {
     return {
       success: false,
-      error: 'Unable to sign in. Please check your credentials and try again.',
+      error:
+        error?.response?.data?.message ||
+        'Unable to sign in. Please check your credentials and try again.',
     };
   }
 };
 
-
-
+/**
+ * Register a new user (supports both normal and Google OAuth onboarding).
+ * @param {Object} userData
+ */
 export const registerUser = async (userData) => {
   try {
     const isGoogleOnboarding =
       userData.oauthProvider === 'google' &&
       Boolean(userData.oauthToken || userData.googleOnboardingToken);
 
-    const payload = isGoogleOnboarding
+    const body = isGoogleOnboarding
       ? {
           token: userData.oauthToken || userData.googleOnboardingToken,
           name: userData.name?.trim(),
@@ -137,136 +95,105 @@ export const registerUser = async (userData) => {
       ? '/auth/google/complete-signup'
       : '/auth/signup';
 
-    const submitSignup = async () => requestAuthJson(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const response = await api.post(endpoint, body);
+    const payload = getData(response);
 
-    let signupResponse = await submitSignup();
-
-    const { response, payload: responsePayload } = signupResponse;
-    const user = responsePayload?.user || null;
-    const success =
-      response.ok &&
-      Boolean(
-        user ||
-        responsePayload?.success ||
-        response.status === 201
-      );
+    const user = payload?.user || null;
+    const success = Boolean(user || payload?.success || response.status === 201);
 
     if (success) {
-      return {
-        success: true,
-        user,
-      };
+      return { success: true, user };
     }
 
     return {
       success: false,
-      error: "Error occurred while creating account. Please try again later.",
+      error: payload?.message || 'Error occurred while creating account. Please try again later.',
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message || "Error occurred while creating account. Please try again later.",
-      field: error?.field || null,
-      status: error?.status || null,
+      error:
+        error?.response?.data?.message ||
+        error.message ||
+        'Error occurred while creating account. Please try again later.',
+      field: error?.response?.data?.field || null,
+      status: error?.response?.status || null,
     };
   }
 };
 
-export const resetPassword = async (email , newPassword) => {
-  
-  
-  
+/**
+ * Reset password using email and new password.
+ * @param {string} email
+ * @param {string} newPassword
+ */
+export const resetPassword = async (email, newPassword) => {
   try {
-    const response = await fetch('auth/reset-password', {
-      method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-          newPassword,
-        }),
-      });
+    const response = await api.post('/auth/reset-password', { email, newPassword });
+    const payload = getData(response);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error occurred while resetting password. Please try again later.",
-        };
-      }
-
-      return {
-        success: true,
-      };
-    } catch {
+    if (!payload?.success) {
       return {
         success: false,
-        error: "Error occurred while resetting password. Please try again later.",
+        error: payload?.message || 'Error occurred while resetting password. Please try again later.',
       };
     }
-  };
 
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message ||
+        'Error occurred while resetting password. Please try again later.',
+    };
+  }
+};
+
+/**
+ * Send forgot password email.
+ * @param {string} email
+ */
 export const forgotPassword = async (email) => {
-  
   try {
-    const response = await fetch('/auth/forgot-password', {
-      method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-        }),
-      });
+    const response = await api.post('/auth/forgot-password', { email });
+    const payload = getData(response);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error occurred while sending Email.",
-        };
-      }
-
-      return {
-        success: true,
-      };
-    } catch {
+    if (!payload?.success) {
       return {
         success: false,
-        error: "Error occurred while sending Email.",
+        error: payload?.message || 'Error occurred while sending email.',
       };
     }
-  };
 
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message ||
+        'Error occurred while sending email.',
+    };
+  }
+};
 
-export const logoutUser = async() => {
+/**
+ * Logout the current user.
+ */
+export const logoutUser = async () => {
   try {
-    const response = await fetch('/auth/logout', {
-      method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
+    const response = await api.post('/auth/logout');
+    const payload = getData(response);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error while logging out.",
-        };
-      }
-
-      return {
-        success: true,
-      };
-    } catch {
-      return {
-        success: false,
-        error: "Error while logging out.",
-      };
+    if (!payload?.success) {
+      return { success: false, error: 'Error while logging out.' };
     }
-  };
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error?.response?.data?.message || 'Error while logging out.',
+    };
+  }
+};
