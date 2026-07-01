@@ -1,24 +1,84 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getCart,
+  addToCartAPI,
+  updateCartItemAPI,
+  removeFromCartAPI,
+  clearCartAPI,
+} from "@/utils/cart";
 
 const CartContext = createContext(null);
 
+const LOCAL_KEY = "shopco_cart";
+
+// ─── LocalStorage helpers ───────────────────────────
+const loadLocal = () => {
+  try {
+    const saved = localStorage.getItem(LOCAL_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveLocal = (items) => {
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
+  } catch {}
+};
+
+// ─── Provider ───────────────────────────────────────
 export function CartProvider({ children }) {
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState([]);
+  const [cartLoading, setCartLoading] = useState(false);
 
-  // Load cart from localStorage on mount
+  // ── Load cart on auth change ──────────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("shopco_cart");
-    if (saved) setItems(JSON.parse(saved));
-  }, []);
+    const loadCart = async () => {
+      setCartLoading(true);
 
-  // Save cart to localStorage on change
+      if (isAuthenticated) {
+        // Logged in → fetch from backend
+        const result = await getCart();
+        if (result.success) {
+          setItems(result.items);
+        } else {
+          // Fallback to localStorage if backend fails
+          setItems(loadLocal());
+        }
+      } else {
+        // Guest → use localStorage
+        setItems(loadLocal());
+      }
+
+      setCartLoading(false);
+    };
+
+    loadCart();
+  }, [isAuthenticated, user]);
+
+  // ── Save to localStorage for guests ──────────────
   useEffect(() => {
-    localStorage.setItem("shopco_cart", JSON.stringify(items));
-  }, [items]);
+    if (!isAuthenticated) {
+      saveLocal(items);
+    }
+  }, [items, isAuthenticated]);
 
-  const addToCart = (product, quantity = 1, size, color) => {
+  // ── addToCart ────────────────────────────────────
+  const addToCart = useCallback(async (product, quantity = 1, size, color) => {
+    if (isAuthenticated) {
+      const result = await addToCartAPI(product._id || product.id, quantity, size, color);
+      if (result.success) {
+        setItems(result.items);
+        return;
+      }
+    }
+
+    // Guest or fallback
     setItems((prev) => {
       const existing = prev.find(
         (i) => i.id === product.id && i.size === size && i.color === color
@@ -32,16 +92,40 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...product, quantity, size, color }];
     });
-  };
+  }, [isAuthenticated]);
 
-  const removeFromCart = (id, size, color) => {
+  // ── removeFromCart ───────────────────────────────
+  const removeFromCart = useCallback(async (id, size, color) => {
+    if (isAuthenticated) {
+      const result = await removeFromCartAPI(id, size, color);
+      if (result.success) {
+        setItems(result.items);
+        return;
+      }
+    }
+
+    // Guest or fallback
     setItems((prev) =>
       prev.filter((i) => !(i.id === id && i.size === size && i.color === color))
     );
-  };
+  }, [isAuthenticated]);
 
-  const updateQuantity = (id, size, color, quantity) => {
-    if (quantity < 1) return;
+  // ── updateQuantity ───────────────────────────────
+  const updateQuantity = useCallback(async (id, size, color, quantity) => {
+    if (quantity < 1) {
+      await removeFromCart(id, size, color);
+      return;
+    }
+
+    if (isAuthenticated) {
+      const result = await updateCartItemAPI(id, quantity, size, color);
+      if (result.success) {
+        setItems(result.items);
+        return;
+      }
+    }
+
+    // Guest or fallback
     setItems((prev) =>
       prev.map((i) =>
         i.id === id && i.size === size && i.color === color
@@ -49,17 +133,33 @@ export function CartProvider({ children }) {
           : i
       )
     );
-  };
+  }, [isAuthenticated, removeFromCart]);
 
-  const clearCart = () => setItems([]);
+  // ── clearCart ────────────────────────────────────
+  const clearCart = useCallback(async () => {
+    if (isAuthenticated) {
+      await clearCartAPI();
+    }
+    setItems([]);
+    saveLocal([]);
+  }, [isAuthenticated]);
 
+  // ── Computed values ──────────────────────────────
   const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
-
   const subtotal = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, subtotal }}
+      value={{
+        items,
+        cartLoading,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        subtotal,
+      }}
     >
       {children}
     </CartContext.Provider>

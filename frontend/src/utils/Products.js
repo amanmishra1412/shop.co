@@ -1,59 +1,94 @@
-export const GetProductsAll = async () => {
-try {
-    const response = await fetch('/products', {
-      method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
+import api, { getData } from './api';
 
-      const result = await response.json().catch(() => ({}));
+// ─────────────────────────────────────────────
+// Products APIs
+// ─────────────────────────────────────────────
 
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error while getting products.",
-        };
-      }
+/**
+ * Get all products (with optional query params for filter/sort/search)
+ * @param {Object} params - e.g. { category, style, sort, minPrice, maxPrice, page, limit }
+ */
+export const GetProductsAll = async (params = {}) => {
+  try {
+    const response = await api.get('/products', { params });
+    const payload = getData(response);
 
-      return {
-        success: true,  
-        products:result.products,
-      };
-    } catch {
-      return {
-        success: false,
-        error: "Error while getting products.",
-      };
-    }
-
+    return {
+      success: true,
+      products: payload?.products || payload || [],
+      total: payload?.total || 0,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      products: [],
+      error: error?.response?.data?.message || 'Error while getting products.',
+    };
+  }
 };
 
+/**
+ * Get a single product by ID
+ * @param {string|number} id
+ */
 export const GetProductById = async (id) => {
-try {
-    const response = await fetch(`/products/${id}`, {
-      method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
+  try {
+    const response = await api.get(`/products/${id}`);
+    const payload = getData(response);
 
-      const result = await response.json().catch(() => ({}));
+    return {
+      success: true,
+      product: payload?.product || payload || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      product: null,
+      error: error?.response?.data?.message || 'Error while getting product.',
+    };
+  }
+};
 
-      if (!response.ok || !result?.success) {
-        return {
-          success: false,
-          error: "Error while getting product.",
-        };
-      }
+/**
+ * Search products by keyword
+ * @param {string} query
+ */
+export const SearchProducts = async (query) => {
+  try {
+    const response = await api.get('/products/search', { params: { q: query } });
+    const payload = getData(response);
 
-      return {
-        success: true,  
-        product:result.product,
-      };
-    } catch {
-      return {
-        success: false,
-        error: "Error while getting product.",
-      };
-    }
+    return {
+      success: true,
+      products: payload?.products || payload || [],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      products: [],
+      error: error?.response?.data?.message || 'Error while searching products.',
+    };
+  }
+};
 
+/**
+ * Get products by category
+ * @param {string} category
+ */
+export const GetProductsByCategory = async (category) => {
+  try {
+    const response = await api.get('/products', { params: { category } });
+    const payload = getData(response);
+
+    return {
+      success: true,
+      products: payload?.products || payload || [],
+    };
+  } catch (error) {
+    return {
+      success: false,
+      products: [],
+      error: error?.response?.data?.message || 'Error while getting products.',
+    };
+  }
 };
