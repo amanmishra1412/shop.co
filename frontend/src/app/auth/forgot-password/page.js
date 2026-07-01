@@ -4,21 +4,36 @@ import { useState } from "react";
 import Link from "next/link";
 import AuthCard from "@/components/auth/AuthCard";
 import { MailIcon } from "@/components/common/Icons";
-
+import { forgotPassword } from "@/utils/auth";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("")
     setLoading(true);
-    // Simulate API call delay
-    setTimeout(() => {
-      setSent(true);
-      setLoading(false);
-    }, 1200);
-  };
+      if (email !== email) {
+        setError("Email not found");
+        return;
+      }
+      if (email.length < 6) {
+        setError("Email must be at least 6 characters");
+        return;
+      }
+      try {
+        const result = await forgotPassword(email);
+        if (result.success) {
+          setSent(true);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   if (sent) {
     return (

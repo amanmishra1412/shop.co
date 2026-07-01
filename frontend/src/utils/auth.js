@@ -1,108 +1,272 @@
-// Dummy users stored in memory (replace with real API later)
-const USERS_KEY = "shopco_users";
-const TOKEN_KEY = "shopco_token";
 
-// Seed a default user if none exist
-const seedUsers = () => {
-  if (typeof window === "undefined") return;
-  const existing = localStorage.getItem(USERS_KEY);
-  if (!existing) {
-    localStorage.setItem(
-      USERS_KEY,
-      JSON.stringify([
-        {
-          id: 1,
-          name: "Demo User",
-          email: "demo@shopco.com",
-          password: "password123",
-        },
-      ])
-    );
-  }
+const JSON_HEADERS = {
+  'Content-Type': 'application/json'
 };
 
-// Create a dummy base64 JWT-style token
-export const createToken = (user) => {
-  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const payload = btoa(
-    JSON.stringify({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    })
-  );
-  const signature = btoa(`${header}.${payload}.secret`);
-  return `${header}.${payload}.${signature}`;
-};
-
-// Decode our dummy token
-export const decodeToken = (token) => {
+const safeJson = async (response) => {
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
-    if (payload.exp < Date.now()) return null; // expired
-    return payload;
+    return await response.json();
   } catch {
-    return null;
+    return {};
   }
 };
 
-export const getToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-};
-
-export const setToken = (token) => {
-  localStorage.setItem(TOKEN_KEY, token);
-};
-
-export const removeToken = () => {
-  localStorage.removeItem(TOKEN_KEY);
-};
-
-export const getCurrentUser = () => {
-  const token = getToken();
-  if (!token) return null;
-  return decodeToken(token);
-};
-
-// Auth operations
-export const loginUser = (email, password) => {
-  seedUsers();
-  const users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  const user = users.find((u) => u.email === email && u.password === password);
-  if (!user) throw new Error("Invalid email or password");
-  const token = createToken(user);
-  setToken(token);
-  return { user, token };
-};
-
-export const registerUser = (name, email, password) => {
-  seedUsers();
-  const users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  if (users.find((u) => u.email === email)) {
-    throw new Error("Email already registered");
+const unwrapPayload = (payload) => {
+  if (payload && typeof payload === 'object' && payload.data && typeof payload.data === 'object') {
+    return payload.data;
   }
-  const newUser = { id: Date.now(), name, email, password };
-  users.push(newUser);
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  const token = createToken(newUser);
-  setToken(token);
-  return { user: newUser, token };
+
+  return payload;
 };
 
-export const logoutUser = () => {
-  removeToken();
+
+const requestAuthJson = async (path, options = {}) => {
+  const response = await fetch(path, {
+    cache: 'no-store',
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...JSON_HEADERS,
+      ...(options.headers || {}),
+    },
+  });
+
+  const rawPayload = await safeJson(response);
+  const payload = unwrapPayload(rawPayload);
+
+  return {
+    response,
+    rawPayload,
+    payload,
+  };
 };
 
-export const resetPassword = (email, newPassword) => {
-  seedUsers();
-  const users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  const idx = users.findIndex((u) => u.email === email);
-  if (idx === -1) throw new Error("Email not found");
-  users[idx].password = newPassword;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return true;
+
+
+export const getToken = async () => {
+try {
+    const response = await fetch('/auth/verify-me', {
+      method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        return {
+          success: false,
+          error: "Error while verify token.",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Error while verify token.",
+      };
+    }
+
 };
+
+
+
+// export const getCurrentUser = () => {
+//   const token = getToken();
+//   if (!token) return null;
+//   return decodeToken(token);
+// };
+
+
+
+export const loginUser = async (email, password) => {
+  try {
+    const submitLogin = async (token) => requestAuthJson('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(loginData),
+    });
+
+    let loginResponse = await submitLogin(csrfToken);
+
+    const { response, payload } = loginResponse;
+
+    if (response.ok && payload?.user) {
+      return {
+        success: true,
+        user: payload.user,
+      };
+    }
+
+    return {
+      success: false,
+      error: 'Unable to sign in. Please check your credentials and try again.',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Unable to sign in. Please check your credentials and try again.',
+    };
+  }
+};
+
+
+
+export const registerUser = async (userData) => {
+  try {
+    const isGoogleOnboarding =
+      userData.oauthProvider === 'google' &&
+      Boolean(userData.oauthToken || userData.googleOnboardingToken);
+
+    const payload = isGoogleOnboarding
+      ? {
+          token: userData.oauthToken || userData.googleOnboardingToken,
+          name: userData.name?.trim(),
+          email: userData.email?.trim().toLowerCase(),
+          password: userData.password,
+        }
+      : {
+          name: userData.name?.trim(),
+          email: userData.email?.trim().toLowerCase(),
+          password: userData.password,
+        };
+
+    const endpoint = isGoogleOnboarding
+      ? '/auth/google/complete-signup'
+      : '/auth/signup';
+
+    const submitSignup = async () => requestAuthJson(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    let signupResponse = await submitSignup();
+
+    const { response, payload: responsePayload } = signupResponse;
+    const user = responsePayload?.user || null;
+    const success =
+      response.ok &&
+      Boolean(
+        user ||
+        responsePayload?.success ||
+        response.status === 201
+      );
+
+    if (success) {
+      return {
+        success: true,
+        user,
+      };
+    }
+
+    return {
+      success: false,
+      error: "Error occurred while creating account. Please try again later.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message || "Error occurred while creating account. Please try again later.",
+      field: error?.field || null,
+      status: error?.status || null,
+    };
+  }
+};
+
+export const resetPassword = async (email , newPassword) => {
+  
+  
+  
+  try {
+    const response = await fetch('auth/reset-password', {
+      method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          newPassword,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        return {
+          success: false,
+          error: "Error occurred while resetting password. Please try again later.",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Error occurred while resetting password. Please try again later.",
+      };
+    }
+  };
+
+export const forgotPassword = async (email) => {
+  
+  try {
+    const response = await fetch('/auth/forgot-password', {
+      method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        return {
+          success: false,
+          error: "Error occurred while sending Email.",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Error occurred while sending Email.",
+      };
+    }
+  };
+
+
+export const logoutUser = async() => {
+  try {
+    const response = await fetch('/auth/logout', {
+      method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.success) {
+        return {
+          success: false,
+          error: "Error while logging out.",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Error while logging out.",
+      };
+    }
+  };

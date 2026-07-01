@@ -19,20 +19,42 @@ function LoginForm() {
 
   const redirect = searchParams.get("redirect") || "/";
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+// useEffect(() => {
+//   first
+
+//   return () => {
+//     second
+//   }
+// }, [third])
+
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
+
     try {
-      const { user } = loginUser(form.email, form.password);
-      login(user);
-      router.push(redirect);
-    } catch (err) {
-      setError(err.message);
+    const result = loginUser(form.email, form.password);
+
+      if (result.success) {
+        toast.success("Login successful");
+        login(user);
+        router.push(redirect);
+        return;
+      }
+
+     
+
+      setError(result.error || 'Unable to sign in. Please check your credentials and try again.');
+      toast.error(result.error || 'Unable to sign in. Please check your credentials and try again.');
+    } catch (loginError) {
+      setError(result.error || 'Unable to sign in. Please check your credentials and try again.');
+      toast.error(result.error || 'Unable to sign in. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <AuthCard

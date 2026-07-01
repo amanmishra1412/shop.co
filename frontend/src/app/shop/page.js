@@ -6,7 +6,7 @@ import Link from "next/link";
 import NewsletterBanner from "@/components/common/NewsletterBanner";
 import ProductCard from "@/components/common/ProductCard";
 import FilterSidebar from "@/components/shop/FilterSidebar";
-import { products } from "@/data/products";
+import { GetProductsAll } from "@/utils/Products";
 import { Suspense } from "react";
 import {
   ArrowLeftIcon,
@@ -23,7 +23,18 @@ const cloneFilters = (filters) => ({
   sizes: [...filters.sizes],
 });
 
-function ShopContent() {
+const products = async()=>{
+  try{
+    const {products,success} = await GetProductsAll();
+    if(!success) throw new Error("Error while getting products.");
+    return products;
+  }catch(error){
+    console.error(error);
+    return [];
+  }
+}
+
+async function ShopContent() {
   const searchParams = useSearchParams();
   const initialFilters = {
     category: "",
@@ -39,6 +50,7 @@ function ShopContent() {
   const [page, setPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const perPage = 9;
+  
 
   const filtered = useMemo(() => {
     let list = [...products];

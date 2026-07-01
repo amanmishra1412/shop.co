@@ -1,14 +1,16 @@
-import { getProductById, products } from "@/data/products";
+import { GetProductById, GetProductsAll  } from "@/utils/Products";
 import { notFound } from "next/navigation";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
 
-export async function generateStaticParams() {
-  return products.map((p) => ({ id: String(p.id) }));
+export async function generateStaticParams({params}) {
+  const {id} = await params;
+  const { product } = await GetProductById(id);
+  return product;
 }
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const product = getProductById(id);
+  const { product } = await GetProductById(id);
   if (!product) return { title: "Product Not Found" };
   return {
     title: `${product.name} — SHOP.CO`,
@@ -18,7 +20,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const { id } = await params;
-  const product = getProductById(id);
+  const { product } = await GetProductById(id);
   if (!product) notFound();
   return <ProductDetailClient product={product} />;
 }
