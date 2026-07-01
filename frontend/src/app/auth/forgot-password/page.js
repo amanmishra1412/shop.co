@@ -13,27 +13,21 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("")
+    setError("");
     setLoading(true);
-      if (email !== email) {
-        setError("Email not found");
-        return;
+    try {
+      const result = await forgotPassword(email);
+      if (result.success) {
+        setSent(true);
+      } else {
+        setError(result.error || "Error occurred while sending email.");
       }
-      if (email.length < 6) {
-        setError("Email must be at least 6 characters");
-        return;
-      }
-      try {
-        const result = await forgotPassword(email);
-        if (result.success) {
-          setSent(true);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (sent) {
     return (

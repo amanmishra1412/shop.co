@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser } from "@/utils/auth";
 import { useAuth } from "@/context/AuthContext";
 import AuthCard from "@/components/auth/AuthCard";
-import { Suspense } from "react";
+import { toast } from 'react-hot-toast';
 
 function LoginForm() {
   const router = useRouter();
@@ -19,42 +19,31 @@ function LoginForm() {
 
   const redirect = searchParams.get("redirect") || "/";
 
-// useEffect(() => {
-//   first
-
-//   return () => {
-//     second
-//   }
-// }, [third])
-
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-    const result = loginUser(form.email, form.password);
+      const result = await loginUser(form.email, form.password);
 
       if (result.success) {
         toast.success("Login successful");
-        login(user);
+        login(result.user);
         router.push(redirect);
         return;
       }
 
-     
-
       setError(result.error || 'Unable to sign in. Please check your credentials and try again.');
       toast.error(result.error || 'Unable to sign in. Please check your credentials and try again.');
-    } catch (loginError) {
-      setError(result.error || 'Unable to sign in. Please check your credentials and try again.');
-      toast.error(result.error || 'Unable to sign in. Please check your credentials and try again.');
+    } catch (err) {
+      const msg = err?.message || 'Unable to sign in. Please check your credentials and try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <AuthCard
@@ -142,11 +131,6 @@ function LoginForm() {
           <Link href="#" className="underline">Terms of Service</Link> and{" "}
           <Link href="#" className="underline">Privacy Policy</Link>.
         </p>
-
-        {/* Demo hint */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-600 text-center">
-          Demo login: <strong>demo@shopco.com</strong> / <strong>password123</strong>
-        </div>
       </form>
     </AuthCard>
   );

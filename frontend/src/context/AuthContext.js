@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { getCurrentUser, logoutUser, getToken } from "@/utils/auth";
+import { getCurrentUser, logoutUser } from "@/utils/auth";
 
 const AuthContext = createContext(null);
 
@@ -9,19 +9,27 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Load user from token on mount
   useEffect(() => {
-    // Load user from token on mount
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    const fetchUser = async () => {
+      const result = await getCurrentUser();
+      if (result.success && result.user) {
+        setUser(result.user);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    };
+
+    fetchUser();
   }, []);
 
   const login = (userData) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    logoutUser();
+  const logout = async () => {
+    await logoutUser();
     setUser(null);
   };
 
