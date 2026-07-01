@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', 'Satoshi', sans-serif;
+  background: #fff;
+  color: #000;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar but keep scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Range input custom style */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: #000;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #000;
+  cursor: pointer;
+}
+
+.testimonial-track {
+  --testimonial-gap: 1.25rem;
+  --testimonial-visible: 1;
+  display: flex;
+  gap: var(--testimonial-gap);
+  transform: translateX(
+    calc(
+      var(--testimonial-index, 0) * -1 *
+        (
+          (100% - (var(--testimonial-gap) * (var(--testimonial-visible) - 1))) /
+            var(--testimonial-visible) + var(--testimonial-gap)
+        )
+    )
+  );
+}
+
+.testimonial-card {
+  flex: 0 0
+    calc(
+      (100% - (var(--testimonial-gap) * (var(--testimonial-visible) - 1))) /
+        var(--testimonial-visible)
+    );
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .testimonial-track {
+    --testimonial-visible: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .testimonial-track {
+    --testimonial-visible: 3;
+  }
 }
