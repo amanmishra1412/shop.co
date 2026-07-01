@@ -6,6 +6,7 @@ const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const productRoute = require("./routes/productRoute");
+const authRoute = require('./routes/authRoute')
 
 app.use(
     cors({
@@ -25,6 +26,6 @@ app.get("/", (req, res) => {
     res.send("Backend working");
 });
 
-console.log(process.env.MONGO_URI);
+app.use("/auth", authRoute);
 
 module.exports = app;
