@@ -2,10 +2,10 @@ import Link from "next/link";
 import StarRating from "./StarRating";
 
 export default function ProductCard({ product }) {
-  const { _id, name, price, originalPrice, discount, rating, reviewCount, images } = product;
+  const { id, name, price, originalPrice, discount, rating, reviewCount, images } = product;
 
   return (
-    <Link href={`/product/${_id}`} className="group block">
+    <Link href={`/product/${id}`} className="group block">
       {/* Image */}
       <div className="relative bg-[#F0F0F0] rounded-2xl overflow-hidden aspect-square mb-3">
         <img
