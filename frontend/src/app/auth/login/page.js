@@ -38,7 +38,6 @@ function LoginForm() {
 
     try {
       const result = await loginUser(form.email, form.password);
-
       if (result.success) {
         const fallbackUser = {
           name: form.email.split("@")[0] || "User",

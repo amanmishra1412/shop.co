@@ -7,7 +7,7 @@ import NewsletterBanner from "@/components/common/NewsletterBanner";
 import { GetProductsAll } from "@/utils/Products";
 
 export const metadata = {
-  title: "SHOP.CO — Find Clothes That Match Your Style",
+  title: "SHOP.CO - Find Clothes That Match Your Style",
   description:
     "Shop the latest fashion trends. From casual wear to formal outfits, find your perfect style at SHOP.CO.",
 };
@@ -31,3 +31,4 @@ export default async function HomePage() {
     </>
   );
 }
+

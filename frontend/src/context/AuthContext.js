@@ -37,7 +37,7 @@ const writeStoredUser = (user) => {
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => readStoredUser());
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const persistUser = useCallback((nextUser) => {
@@ -52,12 +52,8 @@ export function AuthProvider({ children }) {
 
     const initialize = async () => {
       const cached = readStoredUser();
-
-      if (cached) {
-        await Promise.resolve();
-        if (active) {
-          setUser(cached);
-        }
+      if (active) {
+        setUser(cached);
       }
 
       try {

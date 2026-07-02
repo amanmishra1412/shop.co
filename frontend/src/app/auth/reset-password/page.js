@@ -11,9 +11,9 @@ import { CheckIcon } from "@/components/common/Icons";
 function ResetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialEmail = searchParams.get("email") || "";
+  const initialToken = searchParams.get("token") || "";
 
-  const [form, setForm] = useState({ email: initialEmail, password: "", confirm: "" });
+  const [form, setForm] = useState({ token: initialToken, password: "", confirm: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -23,8 +23,8 @@ function ResetForm() {
     event.preventDefault();
     setError("");
 
-    if (!form.email) {
-      setError("Email is required");
+    if (!form.token.trim()) {
+      setError("Reset token is required");
       return;
     }
 
@@ -41,7 +41,7 @@ function ResetForm() {
     setLoading(true);
 
     try {
-      const result = await resetPassword(form.email, form.password);
+      const result = await resetPassword(form.token.trim(), form.password);
       if (result.success) {
         setSuccess(true);
         setTimeout(() => router.replace("/auth/login"), 2200);
@@ -70,7 +70,7 @@ function ResetForm() {
   }
 
   return (
-    <AuthCard title="Reset Password" subtitle="Enter your new password below">
+    <AuthCard title="Reset Password" subtitle="Enter the token from your email and your new password">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
@@ -79,12 +79,12 @@ function ResetForm() {
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Email Address</label>
+          <label className="block text-sm font-medium mb-1.5">Reset Token</label>
           <input
-            type="email"
-            placeholder="name@example.com"
-            value={form.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
+            type="text"
+            placeholder="Paste token from email"
+            value={form.token}
+            onChange={(event) => setForm({ ...form, token: event.target.value })}
             required
             className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition"
           />
@@ -180,3 +180,4 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
+

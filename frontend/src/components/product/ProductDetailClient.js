@@ -40,13 +40,7 @@ export default function ProductDetailClient({ product }) {
   const [added, setAdded] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewDraft, setReviewDraft] = useState({ name: "", rating: 5, comment: "" });
-  const [reviews, setReviews] = useState(() =>
-    normalizeReviews(
-      normalizedProduct.reviews.length
-        ? normalizedProduct.reviews
-        : getReviewsByProduct(normalizedProduct.id)
-    )
-  );
+  const [reviews, setReviews] = useState(() => normalizeReviews(getReviewsByProduct(normalizedProduct.id)));
 
   const related = useMemo(
     () =>
@@ -121,7 +115,7 @@ export default function ProductDetailClient({ product }) {
             <div className="flex items-center gap-2 mb-5">
               <StarRating rating={normalizedProduct.rating || 0} size="md" />
               <span className="text-sm text-gray-500">
-                {normalizedProduct.rating || 0}/5 ({reviews.length} Reviews)
+                {normalizedProduct.rating || 0}/5 ({normalizedProduct.reviewCount || reviews.length} Reviews)
               </span>
             </div>
 

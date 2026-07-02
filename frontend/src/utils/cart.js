@@ -1,7 +1,7 @@
 import api, { getData } from "./api";
-import { normalizeCartItems } from "./normalize";
+import { normalizeCart } from "./normalize";
 
-const extractItems = (payload) => payload?.items || payload?.cartItems || payload?.data || payload || [];
+const extractCart = (payload) => payload?.cart || payload?.data?.cart || payload?.data || payload || {};
 
 export const getCart = async () => {
   try {
@@ -10,12 +10,12 @@ export const getCart = async () => {
 
     return {
       success: true,
-      items: normalizeCartItems(extractItems(payload)),
+      cart: normalizeCart(extractCart(payload)),
     };
   } catch (error) {
     return {
       success: false,
-      items: [],
+      cart: normalizeCart({ items: [] }),
       error: error?.response?.data?.message || "Error while fetching cart.",
     };
   }
@@ -28,7 +28,7 @@ export const addToCartAPI = async (productId, quantity = 1, size, color) => {
 
     return {
       success: true,
-      items: normalizeCartItems(extractItems(payload)),
+      cart: normalizeCart(extractCart(payload)),
     };
   } catch (error) {
     return {
@@ -38,14 +38,14 @@ export const addToCartAPI = async (productId, quantity = 1, size, color) => {
   }
 };
 
-export const updateCartItemAPI = async (productId, quantity, size, color) => {
+export const updateCartItemAPI = async (itemId, quantity) => {
   try {
-    const response = await api.put("/cart/update", { productId, quantity, size, color });
+    const response = await api.put(`/cart/item/${itemId}`, { quantity });
     const payload = getData(response);
 
     return {
       success: true,
-      items: normalizeCartItems(extractItems(payload)),
+      cart: normalizeCart(extractCart(payload)),
     };
   } catch (error) {
     return {
@@ -55,16 +55,14 @@ export const updateCartItemAPI = async (productId, quantity, size, color) => {
   }
 };
 
-export const removeFromCartAPI = async (productId, size, color) => {
+export const removeFromCartAPI = async (itemId) => {
   try {
-    const response = await api.delete("/cart/remove", {
-      data: { productId, size, color },
-    });
+    const response = await api.delete(`/cart/item/${itemId}`);
     const payload = getData(response);
 
     return {
       success: true,
-      items: normalizeCartItems(extractItems(payload)),
+      cart: normalizeCart(extractCart(payload)),
     };
   } catch (error) {
     return {
@@ -76,8 +74,13 @@ export const removeFromCartAPI = async (productId, size, color) => {
 
 export const clearCartAPI = async () => {
   try {
-    await api.delete("/cart/clear");
-    return { success: true };
+    const response = await api.delete("/cart/clear");
+    const payload = getData(response);
+
+    return {
+      success: true,
+      cart: normalizeCart(extractCart(payload)),
+    };
   } catch (error) {
     return {
       success: false,

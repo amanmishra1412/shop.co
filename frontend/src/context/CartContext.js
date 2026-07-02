@@ -3,47 +3,47 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
-  getCart,
   addToCartAPI,
-  updateCartItemAPI,
-  removeFromCartAPI,
   clearCartAPI,
+  getCart,
+  removeFromCartAPI,
+  updateCartItemAPI,
 } from "@/utils/cart";
-import { normalizeCartItem, normalizeCartItems, normalizeProduct } from "@/utils/normalize";
+import { normalizeCart, normalizeCartItem, normalizeCartItems, normalizeProduct } from "@/utils/normalize";
 
 const CartContext = createContext(null);
 const LOCAL_KEY = "shopco_cart";
 
 const loadLocal = () => {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return normalizeCart({ items: [] });
 
   try {
     const saved = window.localStorage.getItem(LOCAL_KEY);
-    return saved ? normalizeCartItems(JSON.parse(saved)) : [];
+    return saved ? normalizeCart(JSON.parse(saved)) : normalizeCart({ items: [] });
   } catch {
-    return [];
+    return normalizeCart({ items: [] });
   }
 };
 
-const saveLocal = (items) => {
+const saveLocal = (cart) => {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(normalizeCartItems(items)));
+    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(normalizeCart(cart)));
   } catch {
     // best effort only
   }
 };
 
 export function CartProvider({ children }) {
-  const { isAuthenticated, user } = useAuth();
-  const [items, setItems] = useState([]);
+  const { isAuthenticated } = useAuth();
+  const [cart, setCart] = useState(() => normalizeCart({ items: [] }));
   const [cartLoading, setCartLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    const loadCart = async () => {
+    const load = async () => {
       setCartLoading(true);
 
       if (isAuthenticated) {
@@ -51,12 +51,12 @@ export function CartProvider({ children }) {
         if (!active) return;
 
         if (result.success) {
-          setItems(normalizeCartItems(result.items));
+          setCart(result.cart);
         } else {
-          setItems(loadLocal());
+          setCart(loadLocal());
         }
       } else {
-        setItems(loadLocal());
+        setCart(loadLocal());
       }
 
       if (active) {
@@ -64,26 +64,29 @@ export function CartProvider({ children }) {
       }
     };
 
-    loadCart();
+    void load();
 
     return () => {
       active = false;
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      saveLocal(items);
+      saveLocal(cart);
     }
-  }, [items, isAuthenticated]);
+  }, [cart, isAuthenticated]);
 
-  const replaceItems = useCallback((nextItems) => {
-    const normalized = normalizeCartItems(nextItems);
-    setItems(normalized);
-    if (!isAuthenticated) {
-      saveLocal(normalized);
-    }
-  }, [isAuthenticated]);
+  const setNextCart = useCallback(
+    (nextCart) => {
+      const normalized = normalizeCart(nextCart);
+      setCart(normalized);
+      if (!isAuthenticated) {
+        saveLocal(normalized);
+      }
+    },
+    [isAuthenticated]
+  );
 
   const addToCart = useCallback(
     async (product, quantity = 1, size, color) => {
@@ -92,108 +95,109 @@ export function CartProvider({ children }) {
       if (isAuthenticated) {
         const result = await addToCartAPI(normalizedProduct.id, quantity, size, color);
         if (result.success) {
-          replaceItems(result.items);
+          setNextCart(result.cart);
           return;
         }
       }
 
-      setItems((prev) => {
-        const next = [...prev];
-        const existing = next.find(
+      setCart((prev) => {
+        const existing = prev.items.find(
           (item) =>
-            String(item.id) === String(normalizedProduct.id) &&
+            String(item.productId) === String(normalizedProduct.id) &&
             item.size === size &&
             item.color === color
         );
 
         if (existing) {
-          return next.map((item) =>
-            String(item.id) === String(normalizedProduct.id) &&
-            item.size === size &&
-            item.color === color
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
+          return {
+            ...prev,
+            items: prev.items.map((item) =>
+              item.cartItemId === existing.cartItemId
+                ? { ...item, quantity: item.quantity + quantity }
+                : item
+            ),
+          };
         }
 
-        return [
-          ...next,
-          normalizeCartItem({
-            ...normalizedProduct,
-            quantity,
-            size,
-            color,
-          }),
-        ];
+        return normalizeCart({
+          ...prev,
+          items: [
+            ...prev.items,
+            normalizeCartItem({
+              _id: `${normalizedProduct.id}-${size}-${color}`,
+              productId: normalizedProduct,
+              quantity,
+              size,
+              color,
+              price: normalizedProduct.price,
+            }),
+          ],
+        });
       });
     },
-    [isAuthenticated, replaceItems]
+    [isAuthenticated, setNextCart]
   );
 
   const removeFromCart = useCallback(
-    async (id, size, color) => {
+    async (itemId) => {
       if (isAuthenticated) {
-        const result = await removeFromCartAPI(id, size, color);
+        const result = await removeFromCartAPI(itemId);
         if (result.success) {
-          replaceItems(result.items);
+          setNextCart(result.cart);
           return;
         }
       }
 
-      setItems((prev) =>
-        prev.filter(
-          (item) =>
-            !(
-              String(item.id) === String(id) &&
-              item.size === size &&
-              item.color === color
-            )
-        )
-      );
+      setCart((prev) => normalizeCart({ ...prev, items: prev.items.filter((item) => item.cartItemId !== itemId) }));
     },
-    [isAuthenticated, replaceItems]
+    [isAuthenticated, setNextCart]
   );
 
   const updateQuantity = useCallback(
-    async (id, size, color, quantity) => {
+    async (itemId, quantity) => {
       if (quantity < 1) {
-        await removeFromCart(id, size, color);
+        await removeFromCart(itemId);
         return;
       }
 
       if (isAuthenticated) {
-        const result = await updateCartItemAPI(id, quantity, size, color);
+        const result = await updateCartItemAPI(itemId, quantity);
         if (result.success) {
-          replaceItems(result.items);
+          setNextCart(result.cart);
           return;
         }
       }
 
-      setItems((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(id) && item.size === size && item.color === color
-            ? { ...item, quantity }
-            : item
-        )
+      setCart((prev) =>
+        normalizeCart({
+          ...prev,
+          items: prev.items.map((item) =>
+            item.cartItemId === itemId ? { ...item, quantity } : item
+          ),
+        })
       );
     },
-    [isAuthenticated, removeFromCart, replaceItems]
+    [isAuthenticated, removeFromCart, setNextCart]
   );
 
   const clearCart = useCallback(async () => {
     if (isAuthenticated) {
-      await clearCartAPI().catch(() => null);
+      const result = await clearCartAPI();
+      if (result.success) {
+        setNextCart(result.cart);
+        return;
+      }
     }
 
-    setItems([]);
-    saveLocal([]);
-  }, [isAuthenticated]);
+    setCart(normalizeCart({ items: [] }));
+    saveLocal({ items: [] });
+  }, [isAuthenticated, setNextCart]);
 
+  const items = cart.items;
   const totalItems = useMemo(
     () => items.reduce((acc, item) => acc + Number(item.quantity || 0), 0),
     [items]
   );
-
   const subtotal = useMemo(
     () => items.reduce((acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0), 0),
     [items]
@@ -222,4 +226,3 @@ export const useCart = () => {
   if (!ctx) throw new Error("useCart must be used inside CartProvider");
   return ctx;
 };
-

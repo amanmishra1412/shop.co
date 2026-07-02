@@ -57,7 +57,7 @@ export default function SignupPage() {
       if (result.success) {
         toast.success("Account created successfully.");
         login(result.user || fallbackUser);
-        router.replace("/auth/verify-email");
+        router.replace("/account");
         return;
       }
 
@@ -73,7 +73,7 @@ export default function SignupPage() {
     }
   };
 
-  const handleGoogleSignup = () => startOAuthLogin("google", "/auth/verify-email");
+  const handleGoogleSignup = () => startOAuthLogin("google", "/account");
 
   return (
     <AuthCard title="Create Account" subtitle="Enter your details below to create your account">
@@ -188,4 +188,3 @@ export default function SignupPage() {
     </AuthCard>
   );
 }
-

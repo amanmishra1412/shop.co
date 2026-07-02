@@ -10,7 +10,7 @@ const emptyFilters = {
   colors: [],
   sizes: [],
   minPrice: 0,
-  maxPrice: 300,
+  maxPrice: 10000,
 };
 
 function FilterSection({ label, isOpen, onToggle, children }) {

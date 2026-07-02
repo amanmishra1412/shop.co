@@ -1,8 +1,9 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { CheckIcon, MailIcon } from "@/components/common/Icons";
 
-export default function NewsletterBanner() {
+function NewsletterBannerInner() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -52,3 +53,9 @@ export default function NewsletterBanner() {
     </section>
   );
 }
+
+const NewsletterBanner = dynamic(() => Promise.resolve(NewsletterBannerInner), {
+  ssr: false,
+});
+
+export default NewsletterBanner;

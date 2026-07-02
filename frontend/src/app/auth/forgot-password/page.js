@@ -52,10 +52,10 @@ export default function ForgotPasswordPage() {
           </button>
 
           <Link
-            href={`/auth/reset-password?email=${encodeURIComponent(email)}`}
+            href="/auth/reset-password"
             className="block w-full bg-black text-white font-semibold py-3.5 rounded-full hover:bg-gray-800 transition text-center mb-3"
           >
-            Continue to Reset
+            Open Reset Page
           </Link>
 
           <Link href="/auth/login" className="block text-sm text-gray-500 hover:text-black">
@@ -105,4 +105,3 @@ export default function ForgotPasswordPage() {
     </AuthCard>
   );
 }
-

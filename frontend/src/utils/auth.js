@@ -1,7 +1,7 @@
 import api, { getData } from "./api";
 import { normalizeUser } from "./normalize";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URI || "http://localhost:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URI || "http://localhost:5000";
 
 const buildPath = (path = "") => `${BACKEND_URL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
@@ -9,7 +9,15 @@ const isSuccessfulResponse = (response, payload) =>
   Boolean(response?.status >= 200 && response?.status < 300 && payload?.success !== false);
 
 const extractUser = (payload, fallback = {}) =>
-  normalizeUser(payload?.user || payload?.data?.user || payload?.account || payload?.profile || fallback);
+  normalizeUser(
+    payload?.user ||
+      payload?.userData ||
+      payload?.userDetail ||
+      payload?.data?.user ||
+      payload?.data?.userData ||
+      payload?.data?.userDetail ||
+      fallback
+  );
 
 export const getToken = async () => {
   try {
@@ -49,17 +57,13 @@ export const loginUser = async (email, password) => {
     if (!isSuccessfulResponse(response, payload)) {
       return {
         success: false,
-        error:
-          payload?.message ||
-          payload?.error ||
-          "Unable to sign in. Please check your credentials and try again.",
+        error: payload?.message || payload?.error || "Unable to sign in. Please check your credentials and try again.",
       };
     }
 
     return {
       success: true,
       user: extractUser(payload, { email }),
-      token: payload?.token || payload?.accessToken || payload?.refreshToken || null,
     };
   } catch (error) {
     return {
@@ -94,16 +98,15 @@ export const registerUser = async (userData) => {
     const endpoint = isGoogleOnboarding ? "/auth/google/complete-signup" : "/auth/signup";
     const response = await api.post(endpoint, body);
     const payload = getData(response);
-    const user = extractUser(payload, body);
 
-    if (!isSuccessfulResponse(response, payload) && !payload?.user && !payload?.token) {
+    if (!isSuccessfulResponse(response, payload) && !payload?.userData && !payload?.userDetail && !payload?.user) {
       return {
         success: false,
         error: payload?.message || "Error occurred while creating account. Please try again later.",
       };
     }
 
-    return { success: true, user, token: payload?.token || null };
+    return { success: true, user: extractUser(payload, body) };
   } catch (error) {
     return {
       success: false,
@@ -118,9 +121,9 @@ export const registerUser = async (userData) => {
   }
 };
 
-export const resetPassword = async (email, newPassword) => {
+export const resetPassword = async (token, newPassword) => {
   try {
-    const response = await api.post("/auth/reset-password", { email, newPassword });
+    const response = await api.post("/auth/reset-password", { token, newPassword });
     const payload = getData(response);
 
     if (!isSuccessfulResponse(response, payload)) {
@@ -130,7 +133,7 @@ export const resetPassword = async (email, newPassword) => {
       };
     }
 
-    return { success: true };
+    return { success: true, message: payload.message };
   } catch (error) {
     return {
       success: false,
@@ -154,7 +157,7 @@ export const forgotPassword = async (email) => {
       };
     }
 
-    return { success: true };
+    return { success: true, message: payload.message };
   } catch (error) {
     return {
       success: false,
