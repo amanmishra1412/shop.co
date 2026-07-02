@@ -33,11 +33,11 @@ export default function Navbar() {
       {/* Main nav */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 gap-4">
         {/* Mobile hamburger */}
-        <button suppressHydrationWarning
+        <button
+          suppressHydrationWarning
           className="lg:hidden flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
-          suppressHydrationWarning
         >
           {menuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
         </button>
@@ -75,7 +75,6 @@ export default function Navbar() {
             className="bg-transparent text-sm outline-none w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            suppressHydrationWarning
           />
         </div>
 

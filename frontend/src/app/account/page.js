@@ -40,13 +40,10 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-12 py-10">
-      {/* Breadcrumb */}
       <p className="text-sm text-gray-400 mb-8">
-        Home &rsaquo;{" "}
-        <span className="text-black font-medium">My Account</span>
+        Home &rsaquo; <span className="text-black font-medium">My Account</span>
       </p>
 
-      {/* Profile header card */}
       <div className="bg-[#F0F0F0] rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 mb-8">
         <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center text-3xl font-black shrink-0">
           {user.name?.[0]?.toUpperCase() || "U"}
@@ -55,18 +52,20 @@ export default function AccountPage() {
           <h1 className="text-2xl font-black">{user.name}</h1>
           <p className="text-gray-500 text-sm mt-0.5">{user.email}</p>
           <span className="inline-block mt-2 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">
-            ✓ Active Member
+            Active Member
           </span>
         </div>
-        <button suppressHydrationWarning
-          onClick={() => { logout(); router.push("/"); }}
+        <button
+          onClick={async () => {
+            await logout();
+            router.replace("/");
+          }}
           className="shrink-0 border border-red-300 text-red-500 text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-red-50 transition"
         >
           Logout
         </button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[
           { label: "Total Orders", value: dummyOrders.length },
@@ -74,19 +73,14 @@ export default function AccountPage() {
           { label: "Cart Value", value: `$${subtotal.toFixed(0)}` },
           { label: "Wishlist Items", value: "5" },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white border border-gray-200 rounded-2xl p-5 text-center"
-          >
+          <div key={stat.label} className="bg-white border border-gray-200 rounded-2xl p-5 text-center">
             <p className="text-3xl font-black mb-1">{stat.value}</p>
             <p className="text-xs text-gray-500">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Main grid */}
       <div className="grid lg:grid-cols-5 gap-6">
-        {/* Account info — left panel */}
         <div className="lg:col-span-2 border border-gray-200 rounded-3xl p-6 sm:p-8 h-fit">
           <h2 className="font-bold text-lg mb-6">Account Information</h2>
           <div className="space-y-5">
@@ -106,8 +100,9 @@ export default function AccountPage() {
               </div>
             ))}
           </div>
+
           <div className="flex flex-col gap-2 mt-8">
-            <button suppressHydrationWarning className="w-full border border-gray-300 rounded-full py-3 text-sm font-semibold hover:bg-gray-50 transition">
+            <button className="w-full border border-gray-300 rounded-full py-3 text-sm font-semibold hover:bg-gray-50 transition">
               Edit Profile
             </button>
             <Link
@@ -119,7 +114,6 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Order history — right panel */}
         <div className="lg:col-span-3 border border-gray-200 rounded-3xl p-6 sm:p-8">
           <h2 className="font-bold text-lg mb-6">Order History</h2>
           <div className="space-y-3 mb-6">
@@ -131,18 +125,21 @@ export default function AccountPage() {
                 <div>
                   <p className="font-semibold text-sm">{order.id}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {order.date} · {order.items} item{order.items > 1 ? "s" : ""}
+                    {order.date} - {order.items} item{order.items > 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-sm mb-1">${order.total}</p>
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusColors[order.status]}`}>
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${statusColors[order.status]}`}
+                  >
                     {order.status}
                   </span>
                 </div>
               </div>
             ))}
           </div>
+
           <div className="flex gap-3 pt-4 border-t border-gray-100">
             <Link
               href="/shop"
@@ -162,3 +159,4 @@ export default function AccountPage() {
     </div>
   );
 }
+

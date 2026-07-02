@@ -4,7 +4,7 @@ import ProductSection from "@/components/home/ProductSection";
 import DressStyleGrid from "@/components/home/DressStyleGrid";
 import TestimonialsSlider from "@/components/home/TestimonialsSlider";
 import NewsletterBanner from "@/components/common/NewsletterBanner";
-import { getNewArrivals, getTopSelling } from "@/data/products";
+import { GetProductsAll } from "@/utils/Products";
 
 export const metadata = {
   title: "SHOP.CO — Find Clothes That Match Your Style",
@@ -12,9 +12,11 @@ export const metadata = {
     "Shop the latest fashion trends. From casual wear to formal outfits, find your perfect style at SHOP.CO.",
 };
 
-export default function HomePage() {
-  const newArrivals = getNewArrivals();
-  const topSelling = getTopSelling();
+export default async function HomePage() {
+  const { products } = await GetProductsAll();
+  const catalog = products.length ? products : [];
+  const newArrivals = catalog.slice(0, 4);
+  const topSelling = catalog.slice(4, 8);
 
   return (
     <>

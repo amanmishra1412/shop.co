@@ -53,7 +53,7 @@ export default function TestimonialsSlider() {
                   <span className="font-bold text-base">{t.name}</span>
                   <CheckIcon className="h-4 w-4 text-green-500" />
                 </div>
-                <p className="text-sm text-gray-500 leading-relaxed">"{t.comment}"</p>
+                <p className="text-sm text-gray-500 leading-relaxed">&quot;{t.comment}&quot;</p>
               </div>
             ))}
           </div>

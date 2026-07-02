@@ -3,9 +3,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
+import { Toaster } from "react-hot-toast";
 
 export const metadata = {
-  title: "SHOP.CO — Find Clothes That Match Your Style",
+  title: "SHOP.CO - Find Clothes That Match Your Style",
   description:
     "Shop the latest fashion trends at SHOP.CO. From casual wear to formal outfits, find your perfect style.",
 };
@@ -25,9 +26,11 @@ export default function RootLayout({ children }) {
             <Navbar />
             <main className="flex-1 flex flex-col">{children}</main>
             <Footer />
+            <Toaster position="top-right" toastOptions={{ duration: 2600 }} />
           </CartProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+

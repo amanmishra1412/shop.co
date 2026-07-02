@@ -11,7 +11,7 @@ import { ArrowRightIcon, CheckIcon, ShoppingCartIcon, TagIcon, TrashIcon } from 
 const PROMO_CODES = { SAVE20: 20, FIRST10: 10 };
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, subtotal, totalItems } = useCart();
+  const { items, removeFromCart, updateQuantity, subtotal, totalItems, cartLoading } = useCart();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [promo, setPromo] = useState("");
@@ -41,6 +41,14 @@ export default function CartPage() {
     }
   };
 
+  if (cartLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 flex items-center justify-center min-h-[50vh]">
+        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <>
@@ -49,7 +57,7 @@ export default function CartPage() {
           <ShoppingCartIcon className="h-9 w-9" />
         </div>
         <h2 className="text-2xl font-bold mb-3">Your cart is empty</h2>
-        <p className="text-gray-500 mb-8">Looks like you haven't added anything yet.</p>
+        <p className="text-gray-500 mb-8">Looks like you haven&apos;t added anything yet.</p>
         <Link
           href="/shop"
           className="inline-block bg-black text-white font-semibold px-10 py-4 rounded-full hover:bg-gray-800 transition"

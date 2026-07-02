@@ -22,7 +22,7 @@ export default function NewsletterBanner() {
         {/* Form */}
         {submitted ? (
           <p className="flex items-center gap-2 text-green-400 font-semibold text-lg">
-            <CheckIcon className="h-5 w-5" /> You're subscribed! Thank you.
+            <CheckIcon className="h-5 w-5" /> You&apos;re subscribed! Thank you.
           </p>
         ) : (
           <form
@@ -31,20 +31,18 @@ export default function NewsletterBanner() {
           >
             <div className="relative">
               <MailIcon className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input suppressHydrationWarning
+              <input
                 type="email"
                 placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="h-11 w-full rounded-full bg-white pl-10 pr-4 text-sm text-black outline-none"
-                suppressHydrationWarning
               />
             </div>
             <button
               type="submit"
               className="h-11 w-full rounded-full bg-white text-sm font-semibold text-black transition hover:bg-gray-100"
-              suppressHydrationWarning
             >
               Subscribe to Newsletter
             </button>

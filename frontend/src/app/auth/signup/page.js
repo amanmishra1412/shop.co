@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/utils/auth";
+import { registerUser, startOAuthLogin } from "@/utils/auth";
 import { useAuth } from "@/context/AuthContext";
 import AuthCard from "@/components/auth/AuthCard";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace("/account");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  const fallbackUser = useMemo(
+    () => ({
+      name: form.name || form.email.split("@")[0] || "User",
+      email: form.email,
+      provider: "email",
+    }),
+    [form.email, form.name]
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -24,6 +39,7 @@ export default function SignupPage() {
       setError("Passwords do not match");
       return;
     }
+
     if (form.password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
@@ -39,27 +55,28 @@ export default function SignupPage() {
       });
 
       if (result.success) {
-        toast.success('Account created successfully.');
-        login(result.user);
-        router.push("/auth/verify-email");
+        toast.success("Account created successfully.");
+        login(result.user || fallbackUser);
+        router.replace("/auth/verify-email");
         return;
       }
 
-      setError(result.error || "Error occurred while creating account.");
-      toast.error(result.error || "Error occurred while creating account.");
+      const message = result.error || "Error occurred while creating account.";
+      setError(message);
+      toast.error(message);
     } catch (err) {
-      setError(err.message || "Something went wrong.");
-      toast.error(err.message || "Something went wrong.");
+      const message = err?.message || "Something went wrong.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleSignup = () => startOAuthLogin("google", "/auth/verify-email");
+
   return (
-    <AuthCard
-      title="Create Account"
-      subtitle="Enter your details below to create your account"
-    >
+    <AuthCard title="Create Account" subtitle="Enter your details below to create your account">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
@@ -69,7 +86,7 @@ export default function SignupPage() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5">Full Name</label>
-          <input suppressHydrationWarning
+          <input
             type="text"
             placeholder="John Doe"
             value={form.name}
@@ -81,7 +98,7 @@ export default function SignupPage() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5">Email</label>
-          <input suppressHydrationWarning
+          <input
             type="email"
             placeholder="name@example.com"
             value={form.email}
@@ -94,7 +111,7 @@ export default function SignupPage() {
         <div>
           <label className="block text-sm font-medium mb-1.5">Password</label>
           <div className="relative">
-            <input suppressHydrationWarning
+            <input
               type={showPassword ? "text" : "password"}
               placeholder="Min. 6 characters"
               value={form.password}
@@ -102,7 +119,7 @@ export default function SignupPage() {
               required
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition pr-12"
             />
-            <button suppressHydrationWarning
+            <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
@@ -114,7 +131,7 @@ export default function SignupPage() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5">Confirm Password</label>
-          <input suppressHydrationWarning
+          <input
             type="password"
             placeholder="Repeat your password"
             value={form.confirm}
@@ -124,7 +141,7 @@ export default function SignupPage() {
           />
         </div>
 
-        <button suppressHydrationWarning
+        <button
           type="submit"
           disabled={loading}
           className="w-full bg-black text-white font-semibold py-3.5 rounded-full hover:bg-gray-800 transition disabled:opacity-60"
@@ -138,8 +155,9 @@ export default function SignupPage() {
           <hr className="flex-1 border-gray-200" />
         </div>
 
-        <button suppressHydrationWarning
+        <button
           type="button"
+          onClick={handleGoogleSignup}
           className="w-full border border-gray-300 rounded-full py-3 flex items-center justify-center gap-2 text-sm font-medium hover:bg-gray-50 transition"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-[11px] font-bold text-white">
@@ -157,10 +175,17 @@ export default function SignupPage() {
 
         <p className="text-center text-xs text-gray-400 mt-2">
           By clicking continue, you agree to our{" "}
-          <Link href="#" className="underline">Terms of Service</Link> and{" "}
-          <Link href="#" className="underline">Privacy Policy</Link>.
+          <Link href="#" className="underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="#" className="underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </form>
     </AuthCard>
   );
 }
+
