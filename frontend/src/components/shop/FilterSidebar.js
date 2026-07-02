@@ -10,7 +10,7 @@ const emptyFilters = {
   colors: [],
   sizes: [],
   minPrice: 0,
-  maxPrice: 300,
+  maxPrice: 10000,
 };
 
 function FilterSection({ label, isOpen, onToggle, children }) {
@@ -129,7 +129,7 @@ export default function FilterSidebar({
           <input suppressHydrationWarning
             type="range"
             min={0}
-            max={300}
+            max={10000}
             value={filters.maxPrice}
             onChange={(e) => updateFilter("maxPrice", Number(e.target.value))}
             className="w-full"
