@@ -28,11 +28,10 @@ function ShopContent() {
 
   const initialFilters = {
     category: "",
-    style: searchParams.get("style") || "",
     colors: [],
     sizes: [],
     minPrice: 0,
-    maxPrice: 300,
+    maxPrice: 10000,
   };
 
   const [allProducts, setAllProducts] = useState([]);
@@ -65,18 +64,60 @@ function ShopContent() {
 
   // ── Filter + sort ─────────────────────────────────
   const filtered = useMemo(() => {
-    let list = [...allProducts];
-    if (appliedFilters.category) list = list.filter((p) => p.category === appliedFilters.category);
-    if (appliedFilters.style) list = list.filter((p) => p.dressStyle === appliedFilters.style.toLowerCase());
-    if (appliedFilters.colors.length) list = list.filter((p) => p.colors?.some((c) => appliedFilters.colors.includes(c)));
-    if (appliedFilters.sizes.length) list = list.filter((p) => p.sizes?.some((s) => appliedFilters.sizes.includes(s)));
-    list = list.filter((p) => p.price >= appliedFilters.minPrice && p.price <= appliedFilters.maxPrice);
-    if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
-    if (sort === "rating") list.sort((a, b) => b.rating - a.rating);
-    return list;
-  }, [allProducts, appliedFilters, sort]);
+  let list = [...allProducts];
 
+  // Category
+  if (appliedFilters.category) {
+    list = list.filter(
+      (p) => p.category === appliedFilters.category
+    );
+  }
+
+  // Colors
+  if (appliedFilters.colors.length > 0) {
+    list = list.filter((p) =>
+      p.colors?.some((color) =>
+        appliedFilters.colors.includes(color)
+      )
+    );
+  }
+
+  // Sizes
+  if (appliedFilters.sizes.length > 0) {
+    list = list.filter((p) =>
+      p.sizes?.some((size) =>
+        appliedFilters.sizes.includes(size)
+      )
+    );
+  }
+
+  // Price
+  list = list.filter(
+    (p) =>
+      p.price >= appliedFilters.minPrice &&
+      p.price <= appliedFilters.maxPrice
+  );
+
+  // Sorting
+  switch (sort) {
+    case "price-asc":
+      list.sort((a, b) => a.price - b.price);
+      break;
+
+    case "price-desc":
+      list.sort((a, b) => b.price - a.price);
+      break;
+
+    case "rating":
+      list.sort((a, b) => b.rating - a.rating);
+      break;
+
+    default:
+      break;
+  }
+
+  return list;
+}, [allProducts, appliedFilters, sort]);
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
@@ -149,11 +190,10 @@ function ShopContent() {
                       <Link
                         key={option.value}
                         href={option.href}
-                        className={`block w-full rounded-xl px-4 py-2.5 text-left text-sm transition ${
-                          sort === option.value
-                            ? "bg-black text-white"
-                            : "text-gray-600 hover:bg-gray-100 hover:text-black"
-                        }`}
+                        className={`block w-full rounded-xl px-4 py-2.5 text-left text-sm transition ${sort === option.value
+                          ? "bg-black text-white"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-black"
+                          }`}
                       >
                         {option.label}
                       </Link>
@@ -218,9 +258,8 @@ function ShopContent() {
                   <button suppressHydrationWarning
                     key={num}
                     onClick={() => setPage(num)}
-                    className={`w-9 h-9 rounded-full text-sm font-medium transition ${
-                      page === num ? "bg-black text-white" : "hover:bg-gray-100 border border-gray-300"
-                    }`}
+                    className={`w-9 h-9 rounded-full text-sm font-medium transition ${page === num ? "bg-black text-white" : "hover:bg-gray-100 border border-gray-300"
+                      }`}
                   >
                     {num}
                   </button>

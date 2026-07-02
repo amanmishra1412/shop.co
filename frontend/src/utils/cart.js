@@ -8,21 +8,26 @@ import api, { getData } from './api';
  * Get the current user's cart from backend
  */
 export const getCart = async () => {
-  try {
-    const response = await api.get('/cart');
-    const payload = getData(response);
+    try {
+        const response = await api.get("/cart");
 
-    return {
-      success: true,
-      items: payload?.items || payload || [],
-    };
-  } catch (error) {
-    return {
-      success: false,
-      items: [],
-      error: error?.response?.data?.message || 'Error while fetching cart.',
-    };
-  }
+        const payload = getData(response);
+
+        return {
+            success: true,
+            cart: payload.cart,
+            items: payload.cart.items,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            cart: null,
+            items: [],
+            error:
+                error.response?.data?.message ||
+                "Error while fetching cart.",
+        };
+    }
 };
 
 /**
@@ -32,21 +37,35 @@ export const getCart = async () => {
  * @param {string} size
  * @param {string} color
  */
-export const addToCartAPI = async (productId, quantity = 1, size, color) => {
-  try {
-    const response = await api.post('/cart/add', { productId, quantity, size, color });
-    const payload = getData(response);
+export const addToCartAPI = async (
+    productId,
+    quantity,
+    size,
+    color
+) => {
+    try {
+        const response = await api.post("/cart/add", {
+            productId,
+            quantity,
+            size,
+            color,
+        });
 
-    return {
-      success: true,
-      items: payload?.items || [],
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error?.response?.data?.message || 'Error while adding to cart.',
-    };
-  }
+        const payload = getData(response);
+
+        return {
+            success: true,
+            cart: payload.cart,
+            items: payload.cart.items,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error:
+                error.response?.data?.message ||
+                "Error while adding product.",
+        };
+    }
 };
 
 /**
@@ -56,21 +75,33 @@ export const addToCartAPI = async (productId, quantity = 1, size, color) => {
  * @param {string} size
  * @param {string} color
  */
-export const updateCartItemAPI = async (productId, quantity, size, color) => {
-  try {
-    const response = await api.put('/cart/update', { productId, quantity, size, color });
-    const payload = getData(response);
+export const updateCartItemAPI = async (
+    itemId,
+    quantity
+) => {
+    try {
+        const response = await api.put(
+            `/cart/item/${itemId}`,
+            {
+                quantity,
+            }
+        );
 
-    return {
-      success: true,
-      items: payload?.items || [],
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error?.response?.data?.message || 'Error while updating cart.',
-    };
-  }
+        const payload = getData(response);
+
+        return {
+            success: true,
+            cart: payload.cart,
+            items: payload.cart.items,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error:
+                error.response?.data?.message ||
+                "Error while updating cart.",
+        };
+    }
 };
 
 /**
@@ -79,36 +110,51 @@ export const updateCartItemAPI = async (productId, quantity, size, color) => {
  * @param {string} size
  * @param {string} color
  */
-export const removeFromCartAPI = async (productId, size, color) => {
-  try {
-    const response = await api.delete('/cart/remove', {
-      data: { productId, size, color },
-    });
-    const payload = getData(response);
+export const removeFromCartAPI = async (
+    itemId
+) => {
+    try {
+        const response = await api.delete(
+            `/cart/item/${itemId}`
+        );
 
-    return {
-      success: true,
-      items: payload?.items || [],
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error?.response?.data?.message || 'Error while removing from cart.',
-    };
-  }
+        const payload = getData(response);
+
+        return {
+            success: true,
+            cart: payload.cart,
+            items: payload.cart.items,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error:
+                error.response?.data?.message ||
+                "Error while removing item.",
+        };
+    }
 };
 
 /**
  * Clear all items from backend cart
  */
 export const clearCartAPI = async () => {
-  try {
-    await api.delete('/cart/clear');
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error?.response?.data?.message || 'Error while clearing cart.',
-    };
-  }
+    try {
+        const response = await api.delete("/cart/clear");
+
+        const payload = getData(response);
+
+        return {
+            success: true,
+            cart: payload.cart,
+            items: [],
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error:
+                error.response?.data?.message ||
+                "Error while clearing cart.",
+        };
+    }
 };

@@ -26,7 +26,7 @@ function LoginForm() {
 
     try {
       const result = await loginUser(form.email, form.password);
-
+console.log(result);
       if (result.success) {
         toast.success("Login successful");
         login(result.user);

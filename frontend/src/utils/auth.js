@@ -50,8 +50,8 @@ export const loginUser = async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
     const payload = getData(response);
 
-    if (payload?.user) {
-      return { success: true, user: payload.user };
+    if (payload?.userData) {
+      return { success: true, user: payload.userData };
     }
 
     return {
@@ -80,16 +80,16 @@ export const registerUser = async (userData) => {
 
     const body = isGoogleOnboarding
       ? {
-          token: userData.oauthToken || userData.googleOnboardingToken,
-          name: userData.name?.trim(),
-          email: userData.email?.trim().toLowerCase(),
-          password: userData.password,
-        }
+        token: userData.oauthToken || userData.googleOnboardingToken,
+        name: userData.name?.trim(),
+        email: userData.email?.trim().toLowerCase(),
+        password: userData.password,
+      }
       : {
-          name: userData.name?.trim(),
-          email: userData.email?.trim().toLowerCase(),
-          password: userData.password,
-        };
+        name: userData.name?.trim(),
+        email: userData.email?.trim().toLowerCase(),
+        password: userData.password,
+      };
 
     const endpoint = isGoogleOnboarding
       ? '/auth/google/complete-signup'
@@ -123,29 +123,42 @@ export const registerUser = async (userData) => {
 };
 
 /**
- * Reset password using email and new password.
- * @param {string} email
+ * Reset password using token and new password.
+ * @param {string} token
  * @param {string} newPassword
  */
-export const resetPassword = async (email, newPassword) => {
+export const resetPassword = async (
+  token,
+  newPassword
+) => {
   try {
-    const response = await api.post('/auth/reset-password', { email, newPassword });
+    const response = await api.post(
+      "/auth/reset-password",
+      {
+        token,
+        newPassword,
+      }
+    );
+
     const payload = getData(response);
 
-    if (!payload?.success) {
+    if (!payload.success) {
       return {
         success: false,
-        error: payload?.message || 'Error occurred while resetting password. Please try again later.',
+        error: payload.message,
       };
     }
 
-    return { success: true };
+    return {
+      success: true,
+      message: payload.message,
+    };
   } catch (error) {
     return {
       success: false,
       error:
-        error?.response?.data?.message ||
-        'Error occurred while resetting password. Please try again later.',
+        error.response?.data?.message ||
+        "Something went wrong.",
     };
   }
 };
@@ -156,23 +169,29 @@ export const resetPassword = async (email, newPassword) => {
  */
 export const forgotPassword = async (email) => {
   try {
-    const response = await api.post('/auth/forgot-password', { email });
+    const response = await api.post("/auth/forgot-password", {
+      email,
+    });
+
     const payload = getData(response);
 
-    if (!payload?.success) {
+    if (!payload.success) {
       return {
         success: false,
-        error: payload?.message || 'Error occurred while sending email.',
+        error: payload.message,
       };
     }
 
-    return { success: true };
+    return {
+      success: true,
+      message: payload.message,
+    };
   } catch (error) {
     return {
       success: false,
       error:
-        error?.response?.data?.message ||
-        'Error occurred while sending email.',
+        error.response?.data?.message ||
+        "Something went wrong.",
     };
   }
 };
