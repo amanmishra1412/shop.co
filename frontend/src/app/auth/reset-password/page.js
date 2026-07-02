@@ -12,7 +12,7 @@ function ResetForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // In production, you'd validate this token from the URL
-  const email = searchParams.get("email") || "";
+  const token = searchParams.get("token") || "";
 
   const [form, setForm] = useState({ password: "", confirm: "" });
   const [error, setError] = useState("");
@@ -33,7 +33,7 @@ function ResetForm() {
     }
     setLoading(true);
     try {
-      const result = await resetPassword(email, form.password);
+      const result = await resetPassword(token, form.password);
       if (result.success) {
         setSuccess(true);
         setTimeout(() => router.push("/auth/login"), 2500);
@@ -114,15 +114,14 @@ function ResetForm() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  form.password.length === 0
+                className={`h-1 flex-1 rounded-full transition-colors ${form.password.length === 0
                     ? "bg-gray-200"
                     : form.password.length < 6
-                    ? i <= 1 ? "bg-red-400" : "bg-gray-200"
-                    : form.password.length < 10
-                    ? i <= 2 ? "bg-yellow-400" : "bg-gray-200"
-                    : i <= 3 ? "bg-green-400" : "bg-gray-200"
-                }`}
+                      ? i <= 1 ? "bg-red-400" : "bg-gray-200"
+                      : form.password.length < 10
+                        ? i <= 2 ? "bg-yellow-400" : "bg-gray-200"
+                        : i <= 3 ? "bg-green-400" : "bg-gray-200"
+                  }`}
               />
             ))}
           </div>
@@ -130,10 +129,10 @@ function ResetForm() {
             {form.password.length === 0
               ? "Enter a password"
               : form.password.length < 6
-              ? "Too weak"
-              : form.password.length < 10
-              ? "Fair"
-              : "Strong"}
+                ? "Too weak"
+                : form.password.length < 10
+                  ? "Fair"
+                  : "Strong"}
           </p>
         </div>
 
