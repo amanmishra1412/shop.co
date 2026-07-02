@@ -98,7 +98,7 @@ export const registerUser = async (userData) => {
     const response = await api.post(endpoint, body);
     const payload = getData(response);
 
-    const user = payload?.user || null;
+    const user = payload?.userData || null;
     const success = Boolean(user || payload?.success || response.status === 201);
 
     if (success) {
