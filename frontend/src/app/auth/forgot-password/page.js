@@ -66,6 +66,11 @@ export default function ForgotPasswordPage() {
       subtitle="Enter your email and we'll send you a reset link"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+            {error}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium mb-1.5">Email Address</label>
           <input suppressHydrationWarning
