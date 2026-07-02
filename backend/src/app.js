@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const cartRoute = require("./routes/cartRoute");
 const productRoute = require("./routes/productRoute");
 const authRoute = require('./routes/authRoute')
+const reviewRoute = require('./routes/reviewRoute')
 
 app.use(
   cors({
@@ -29,5 +30,7 @@ app.get("/", (req, res) => {
 app.use("/auth", authRoute);
 app.use("/api/product",productRoute);
 app.use("/cart", cartRoute);
+app.use("/api/reviews",reviewRoute);
 
 module.exports = app;
+
