@@ -15,6 +15,8 @@ export default function SignupPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const redirect = "/";
+
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -41,7 +43,7 @@ export default function SignupPage() {
             if (result.success) {
                 toast.success('Account created successfully.');
                 login(result.user);
-                // router.push("/auth/verify-email");
+                router.push(redirect);
                 return;
             }
 
